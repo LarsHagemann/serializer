@@ -106,9 +106,16 @@ int main()
 		obj.print();
 	}
 }
-
 ```
 
 ### Planned:
 * make it independent of tinyxml2
 * support for getters/setters
+
+Performance tests:
+Serialiazation of an std::vector<double> with 1000000 elements generates a ~33MB file.
+```C++
+Serialization took 20080974654 nanoseconds (20 seconds)
+Deserialization took 12861291711 nanoseconds (12 seconds)
+```
+
