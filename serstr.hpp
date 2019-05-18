@@ -24,17 +24,26 @@ namespace serializable
 	
 	namespace priv
 	{
-		
-		static std::string narrow( const std::wstring& str ){
-			if (str.empty()) return std::string();
-			int size_needed = WideCharToMultiByte(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0, NULL, NULL);
-			std::string strTo(size_needed, 0);
-			WideCharToMultiByte(CP_UTF8, 0, &str[0], (int)str.size(), &strTo[0], size_needed, NULL, NULL);
-			return strTo;
+	
+		///
+		// _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+		// those two functions need the aforementioned preprocessor definition
+		// to work.
+		static std::string narrow(const std::wstring& win)
+		{
+			std::wstring_convert<
+				std::codecvt_utf8_utf16< std::wstring::value_type >,
+				std::wstring::value_type
+			> utf16conv;
+			return utf16conv.to_bytes(win);
 		}
-		
-		static std::wstring widen(const std::string& str) {
-			return std::wstring(str.begin(), str.end());
+		static std::wstring widen(const std::string& ain)
+		{
+			std::wstring_convert<
+				std::codecvt_utf8_utf16< std::wstring::value_type >,
+				std::wstring::value_type
+			> utf16conv;
+			return utf16conv.from_bytes(ain);
 		}
 		
 	}
