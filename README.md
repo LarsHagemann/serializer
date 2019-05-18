@@ -115,12 +115,13 @@ int main()
 
 ### Planned:
 * support for getters/setters
-* make deserialization faster
 
 Performance tests:
 Serialiazation of an std::vector&lt;double&gt; with 1000000 elements generates a ~7.62MB file.
 ```C++
-Serialization took 387508 microseconds (0.387508 seconds)
-Deserialization took 14478677 microseconds (14.478677 seconds)
+Serialization took 157709 microseconds (0.157709 seconds)
+Deserialization took 288595 microseconds (0.288595 seconds)
 ```
+
+Tested with: MSVC++ x86 Release C++17. The serializer takes a lot longer for debug builds.
 
