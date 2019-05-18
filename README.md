@@ -99,12 +99,12 @@ int main()
 		MyClass obj;
 		obj.set_number(100);
 		obj.set_string("string");
-		ser::Writer writer("object"); // "object" is the name of the root xml element
+		ser::Writer writer; 
 		obj.write_to(writer);
 		writer.write_to("dummy.data"); // Filename
 	}
 	{
-		ser::Reader reader("object"); // "object" needs to match the name from above
+		ser::Reader reader;
 		reader.read_from("dummy.data");
 		MyClass obj;
 		obj.read_from(reader);
