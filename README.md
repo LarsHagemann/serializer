@@ -115,9 +115,9 @@ int main()
 * support for getters/setters
 
 Performance tests:
-Serialiazation of an std::vector<double> with 1000000 elements generates a ~33MB file.
+Serialiazation of an std::vector<double> with 1000000 elements generates a ~7.62MB file.
 ```C++
-Serialization took 20080974654 nanoseconds (20 seconds)
-Deserialization took 12861291711 nanoseconds (12 seconds)
+Serialization took 387508 microseconds (0.387508 seconds)
+Deserialization took 14478677 microseconds (14.478677 seconds)
 ```
 
