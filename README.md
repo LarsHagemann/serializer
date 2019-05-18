@@ -1,5 +1,7 @@
 ### serializer
 
+! serstr.hpp currently works only on Windows. If you know a platform independent std::string narrow(const std::string& in) function, please tell me.
+
 The C++ Serializer makes it (hopefully) easy to serialize and deserialize objects.
 This is a header only library comprised of the following files:
 * [serializable.hpp](/serializable.hpp)
@@ -15,7 +17,7 @@ Add the preprocessor definition SER_ENABLE_FILESYSTEM if your compiler supports 
 
 In serializable.hpp is most of the magic happening. Most interesting for users are the reader and the writer though.
 The four files serarr.hpp, servec.hpp, serstr.hpp and sermap.hpp contain helper functions that make it easy to serialize
-std::map, std::array, std::string, std::filesystem::path (if enabled) and std::vector. 
+std::map, std::array, std::string, std::wstring, std::filesystem::path (if enabled) and std::vector. 
 The Library will work for every trivially copyable type. You can write your own helper functions for other types as well.
 Just have a look at serstr.hpp for example.
 
@@ -114,6 +116,7 @@ int main()
 ### Planned:
 * support for getters/setters
 * make deserialization faster
+* Platform independent narrow(const std::wstring& in) functions
 
 Performance tests:
 Serialiazation of an std::vector&lt;double&gt; with 1000000 elements generates a ~7.62MB file.
