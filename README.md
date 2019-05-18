@@ -116,7 +116,7 @@ int main()
 * make deserialization faster
 
 Performance tests:
-Serialiazation of an std::vector<double> with 1000000 elements generates a ~7.62MB file.
+Serialiazation of an std::vector&lt;double&gt; with 1000000 elements generates a ~7.62MB file.
 ```C++
 Serialization took 387508 microseconds (0.387508 seconds)
 Deserialization took 14478677 microseconds (14.478677 seconds)
