@@ -12,6 +12,8 @@ This is a header only library comprised of the following files:
 * [servec.hpp](/servec.hpp)
 * [sermap.hpp](/sermap.hpp)
 
+Add the preprocessor definition SER_ENABLE_FILESYSTEM if your compiler supports C++17 and the C++ filesystem.
+
 In serializable.hpp is most of the magic happening. Most interesting for users are the reader and the writer though.
 The three files serarr.hpp, servec.hpp and sermap.hpp contain helper functions that make it easy to serialize
 std::map, std::array and std::vector. The Library will work for every type with an ostringstream::operator<< overload and an istringstream::operator>> overload.
@@ -48,7 +50,7 @@ class MyClass : public ser::Serializable<int, std::string>
 {
 	// ...
 public:
-	MyClass() : _Serializer(ser::make_datatype(
+	MyClass() : _Serializer(serializable::make_datatype(
 		make_member("MyClass::my_number", my_number),
 		make_member("MyClass::my_string", my_string))), ... {}
 };
@@ -72,7 +74,7 @@ class MyClass : public ser::Serializable<int, std::string>
 	std::string my_string;
 public:
 	
-	MyClass() : _Serializer(make_datatype(
+	MyClass() : _Serializer(serializable::make_datatype(
 		make_member("MyClass::my_number", my_number),
 		make_member("MyClass::my_string", my_string))) {}
 		

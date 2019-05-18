@@ -1,50 +1,98 @@
 #pragma once
-#include <Tinyxml2/tinyxml2.h>
 #include <sstream>
-#include "ValueHolder.hpp"
+#include <fstream>
+#include <iostream>
+#include <random>
 
-namespace xml = tinyxml2;
+#include "ValueHolder.hpp"
 
 namespace serializable
 {
 	class SerializableBase;
+
 	class Writer
 	{
+	private:
+		std::ostringstream m_stream;
 	public:
-		xml::XMLDocument doc;
-		xml::XMLElement* current = nullptr;
-	public:
-		Writer(const char* root = "root")
+		// constructors
+		Writer() = default;
+		Writer(const Writer&) = default;
+		Writer(Writer&&) = default;
+		Writer& operator=(const Writer&) = default;
+		Writer& operator=(Writer&&) = default;
+		// destructor
+		~Writer()
 		{
-			current = doc.NewElement(root);
-			doc.InsertEndChild(current);
+
 		}
-		void write_to(const std::string& filepath, bool compact = false)
+	private:
+		template<class _T>
+		bool _write_trivial(const _T& data)
 		{
-			doc.SaveFile(filepath.data(), compact);
+			static_assert(std::is_trivially_copyable_v<_T>, "_T needs to be trivially copyable");
+			return m_stream.write((const char*)&data, sizeof(_T)).good();
+		}
+		template<class _T>
+		bool _write_serializable(const _T& data)
+		{
+			data.write_to(*this);
+			return m_stream.good();
+		}
+	public:
+		const std::ostringstream& _get_stream() const
+		{
+			return m_stream;
+		}
+	public:
+		template<class _T>
+		bool write(const _T& data)
+		{
+			if constexpr (std::is_base_of_v<SerializableBase, _T>)
+				return _write_serializable(data);
+			else
+				return _write_trivial(data);
+		}
+		bool append(const Writer& other)
+		{
+			auto data = other._get_stream().str();
+			write(data.length());
+			write(data.c_str(), data.length());
+			return true;
+		}
+		template<class _T>
+		bool write(const _T* data, size_t size)
+		{
+			return m_stream.write((const char*)data, size).good();
+		}
+		template<class _T>
+		bool write(const _T* data)
+		{
+			return m_stream.write((const char*)data, sizeof(_T)).good();
+		}
+	public:
+		bool to_file(const path& path)
+		{
+			std::ofstream out(path, 
+				  std::ios::binary 
+				| std::ios::out 
+				| std::ios::trunc);
+			if (!out.is_open())
+				return false;
+			out << m_stream.str();
+			if (!out.good())
+				return false;
+			out.close();
+			return true;
 		}
 	};
+
 	template<class _T>
-	Writer& operator<<(Writer& writer, const WriterValueHolder<_T>& in)
+	Writer& operator<<(Writer& writer, const _T& data)
 	{
-		if constexpr (std::is_base_of_v<SerializableBase, _T>)
-		{
-			auto my_node = writer.doc.NewElement(in.name);
-			writer.current->InsertEndChild(my_node);
-			writer.current = my_node;
-			in.value.write_to(writer);
-			writer.current = my_node->Parent();
-		}
-		else
-		{
-			auto my_node = writer.doc.NewElement(in.name);
-			std::stringstream ss;
-			ss << in.value;
-			my_node->SetAttribute("value", ss.str().data());
-			writer.current->InsertEndChild(my_node);
-		}
+		writer.write(data);
 		return writer;
-	}	
+	}
 }
 
 namespace ser = serializable;

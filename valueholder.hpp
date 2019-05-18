@@ -1,22 +1,45 @@
 #pragma once
-#include <Tinyxml2/tinyxml2.h>
+#include <fstream>
 
-namespace xml = tinyxml2;
+using hash_t = size_t;
+#ifdef SER_ENABLE_FILESYSTEM
+#include <filesystem>
+using path = std::filesystem::path;
+#else
+using path = std::string;
+#endif
 
-template<class _T>
-struct WriterValueHolder
+static bool read_file(const path& path, std::string& content)
 {
-	using value_type = _T;
-	WriterValueHolder(const _T& v, const char* const n) : value(v), name(n) {}
-	const _T& value;
-	const char* const name;
+#ifdef SER_ENABLE_FILESYSTEM
+	if(!std::filesystem::exists(path))
+		return false;
+#endif
+	std::ifstream file(path, std::ios::binary | std::ios::in);
+	if (file.is_open()) {
+		std::string line;
+		while (getline(file, line)) {
+			content.append(line);
+			content += '\n';
+		}
+		file.close();
+		return true;
+	}
+	return false;
+}
+
+struct ValueInfo
+{
+	hash_t hash;
+	size_t size;
+	char* val;
 };
 
 template<class _T>
 struct ReaderValueHolder
 {
 	using value_type = _T*;
-	ReaderValueHolder(_T* v, xml::XMLElement* elem) : value(v), element(elem) {}
+	ReaderValueHolder(_T* v, ValueInfo i) : value(v), info(i) {}
 	_T* value;
-	xml::XMLElement* element;
+	ValueInfo info;
 };

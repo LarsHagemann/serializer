@@ -13,8 +13,6 @@
 	(n, OffsetOf(std::remove_pointer_t<decltype(this)>, mv))
 #endif
 
-namespace xml = tinyxml2;
-
 namespace serializable
 {
 	class SerializableBase
@@ -27,8 +25,8 @@ namespace serializable
 		SerializableBase& operator=(const SerializableBase&) = default;
 		virtual ~SerializableBase() = default;
 	protected:
-		virtual void write_to(Writer&, const char*) const = 0;
-		virtual void read_from(Reader&, const char*) = 0;
+		virtual size_t write_to(Writer&) const = 0;
+		virtual void read_from(Reader&) = 0;
 		virtual void on_read() {}
 		virtual void on_write() const {}
 	};
@@ -52,11 +50,11 @@ namespace serializable
 	public:
 		/* Constructors */
 		MemberVariable(const char* const name, uint32_t offset)
-			: m_offset(offset), m_name(name)
+			: m_offset(offset), m_hash(std::hash<std::string>()(name))
 		{}
 		/* Public member fields */
 		uint32_t m_offset;
-		const char* const m_name;
+		hash_t m_hash;
 	};
 	template<class ..._Types>
 	class DataType
@@ -88,43 +86,47 @@ namespace serializable
 			: m_datatype(datatype) {}
 	public:
 		/* Serialization functions */
-		void write_to(Writer& writer, const char* e_name = "element") const override
+		size_t write_to(Writer& writer) const override
 		{
 			on_write();
-			auto my_node = writer.doc.NewElement(e_name);
-			writer.current->InsertEndChild(my_node);
-			writer.current = my_node;
 			const auto data = m_datatype.data();
+			Writer tmp;
 			for_each_in_tuple(data, [&](auto i)
 			{
 				using type = typename decltype(i)::member_type;
 				const auto offset = i.m_offset;
 				const auto& value = *ptr_data<type>(offset);
-				writer << WriterValueHolder<type>(value, i.m_name);
+				const hash_t hash = i.m_hash;
+				tmp.write(hash);
+				tmp << value;
 			});
-			writer.current = reinterpret_cast<xml::XMLElement*>(my_node->Parent());
+			writer.append(tmp);
+			return 0;
 		}
-		void read_from(Reader& reader, const char* e_name = "element") override
+		void read_from(Reader& self) override
 		{
+			size_t size;
+			self.read(&size);
+			if (size > self.get_size())
+				return;
+			Reader reader;
+			reader.setup(self, size);
 			on_read();
 			auto data = m_datatype.data();
-			auto my_node = reader.current->FirstChildElement(e_name);
-			reader.current = my_node;
-			auto xChild = my_node->FirstChildElement();
-			while (xChild)
+			hash_t hash;
+			while (reader.read_hash(hash))
 			{
-				auto my_name = xChild->Name();
-				for_each_in_tuple(data, [&](auto var) {
-					if (strcmp(var.m_name, my_name) == 0) {
-						using type = typename decltype(var)::member_type;
-						const auto offset = var.m_offset;
-						auto value = ptr_data<type>(offset);
-						reader >> ReaderValueHolder<type>(value, xChild);
+				for_each_in_tuple(data, [&](auto i)
+				{
+					if (hash == i.m_hash)
+					{
+						using type = typename decltype(i)::member_type;
+						const auto offset = i.m_offset;
+						const auto value = ptr_data<type>(offset);
+						reader >> value;
 					}
 				});
-				xChild = xChild->NextSiblingElement();
 			}
-			reader.current = reinterpret_cast<xml::XMLElement*>(my_node->Parent());
 		}
 	private:
 		/* Helper functions */

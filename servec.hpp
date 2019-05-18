@@ -1,13 +1,7 @@
 #pragma once
 #include <vector>
-#include <Tinyxml2/tinyxml2.h>
-
-namespace xml = tinyxml2;
-
-template<class T>
-struct WriterValueHolder;
-template<class T>
-struct ReaderValueHolder;
+#include "Reader.hpp"
+#include "Writer.hpp"
 
 namespace serializable
 {
@@ -19,53 +13,36 @@ namespace serializable
 	class Writer;
 
 	template<class _T>
-	Writer& operator<<(Writer& writer, const WriterValueHolder<std::vector<_T>>& in)
+	static Writer& operator<<(Writer& writer, const std::vector<_T>& in)
 	{
-		auto my_node = writer.doc.NewElement(in.name);
-		writer.current->InsertEndChild(my_node);
-		writer.current = my_node;
-		for (auto& elem : in.value)
-		{
-			if constexpr (std::is_base_of_v<SerializableBase, _T>)
-				elem.write_to(writer);
-			else
-				writer << WriterValueHolder<decltype(elem)>(elem, "element");
-		}
-		writer.current = reinterpret_cast<xml::XMLElement*>(my_node->Parent());
+		Writer tmp;
+		tmp.write(in.size());
+		for (auto& elem : in)
+			tmp << elem;
+		writer.append(tmp);
 		return writer;
 	}
 
-	/// 
+	///
 	// READING
 	///
 	class Reader;
 
 	template<class _T>
-	static Reader& operator>>(Reader& stream, const ReaderValueHolder<std::vector<_T>>& value)
+	static Reader& operator>>(Reader& stream, std::vector<_T>* value)
 	{
-		auto xChild = value.element->FirstChildElement();
-		while (xChild)
+		auto size = 0u;
+		stream.read(&size);
+
+		auto items = 0u;
+		stream.read(&items);
+
+		value->reserve(items);
+		for (auto i = 0u; i < items; ++i)
 		{
-			stream.current = xChild;
-			if constexpr (std::is_base_of_v<SerializableBase, _T>)
-			{
-				_T tmp;
-				tmp.read_from(stream);
-				(*value.value).emplace_back(tmp);
-			}
-			else
-			{
-				if (xChild->Attribute("value"))
-				{
-					_T tmp;
-					std::istringstream iss(xChild->Attribute("value"));
-					iss >> tmp;
-					(*value.value).emplace_back(tmp);
-				}
-			}
-			if (!xChild->NextSiblingElement())
-				stream.current = reinterpret_cast<xml::XMLElement*>(xChild->Parent());
-			xChild = xChild->NextSiblingElement();
+			_T t;
+			stream >> &t;
+			value->emplace_back(t);
 		}
 		return stream;
 	}
