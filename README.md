@@ -1,13 +1,12 @@
 ### serializer
 
-Dependends on tinyxml2 at the moment. I'm planning to make it independent from external libraries. 
-
 The C++ Serializer makes it (hopefully) easy to serialize and deserialize objects.
 This is a header only library comprised of the following files:
 * [serializable.hpp](/serializable.hpp)
 * [reader.hpp](/reader.hpp)
 * [writer.hpp](/writer.hpp)
 * [valueholder.hpp](/valueholder.hpp)
+* [serstr.hpp](/serstr.hpp)
 * [serarr.hpp](/serarr.hpp)
 * [servec.hpp](/servec.hpp)
 * [sermap.hpp](/sermap.hpp)
@@ -15,8 +14,10 @@ This is a header only library comprised of the following files:
 Add the preprocessor definition SER_ENABLE_FILESYSTEM if your compiler supports C++17 and the C++ filesystem.
 
 In serializable.hpp is most of the magic happening. Most interesting for users are the reader and the writer though.
-The three files serarr.hpp, servec.hpp and sermap.hpp contain helper functions that make it easy to serialize
-std::map, std::array and std::vector. The Library will work for every type with an ostringstream::operator<< overload and an istringstream::operator>> overload.
+The four files serarr.hpp, servec.hpp, serstr.hpp and sermap.hpp contain helper functions that make it easy to serialize
+std::map, std::array, std::string, std::filesystem::path (if enabled) and std::vector. 
+The Library will work for every trivially copyable type. You can write your own helper functions for other types as well.
+Just have a look at serstr.hpp for example.
 
 If you want to make a class serializable do the following.
 
@@ -111,8 +112,8 @@ int main()
 ```
 
 ### Planned:
-* make it independent of tinyxml2
 * support for getters/setters
+* make deserialization faster
 
 Performance tests:
 Serialiazation of an std::vector<double> with 1000000 elements generates a ~7.62MB file.
